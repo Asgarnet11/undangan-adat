@@ -32,6 +32,7 @@ export function sanitizeText(rawString) {
       return map[char] || '';
     })
     // Bersihkan karakter kontrol
+    /* eslint-disable-next-line no-control-regex */
     .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
     .trim();
 }

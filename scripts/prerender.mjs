@@ -18,16 +18,26 @@ async function prerender() {
 
   const rawTemplate = fs.readFileSync(indexHtmlPath, 'utf8');
 
-  // 1. Modifikasi dist/index.html (Halaman root produksi netral) agar diberi noindex
-  let rootHtml = rawTemplate;
-  if (!rootHtml.includes('name="robots"')) {
-    rootHtml = rootHtml.replace(
-      '</head>',
-      '  <meta name="robots" content="noindex, nofollow" />\n  </head>'
-    );
-    fs.writeFileSync(indexHtmlPath, rootHtml, 'utf8');
-    console.log('\x1b[32m✔ dist/index.html disuntikkan meta noindex untuk produksi.\x1b[0m');
+  // Helper untuk membersihkan tag meta lama agar tidak terjadi duplikasi
+  function cleanHead(html) {
+    return html
+      .replace(/<title>[\s\S]*?<\/title>/gi, '')
+      .replace(/<meta\s+name=["']description["'][^>]*>/gi, '')
+      .replace(/<meta\s+property=["']og:[^"']+["'][^>]*>/gi, '')
+      .replace(/<meta\s+name=["']twitter:[^"']+["'][^>]*>/gi, '')
+      .replace(/<meta\s+name=["']robots["'][^>]*>/gi, '');
   }
+
+  // 1. Modifikasi dist/index.html (Halaman root produksi netral) agar diberi noindex
+  let rootHtml = cleanHead(rawTemplate);
+  const brandName = process.env.VITE_BRAND_NAME || 'Kalyana Undangan Adat';
+  const rootMetaTags = `
+    <title>${escapeHtml(brandName)}</title>
+    <meta name="robots" content="noindex, nofollow" />
+  `;
+  rootHtml = rootHtml.replace('</head>', `${rootMetaTags}\n  </head>`);
+  fs.writeFileSync(indexHtmlPath, rootHtml, 'utf8');
+  console.log('\x1b[32m✔ dist/index.html disuntikkan meta noindex untuk produksi.\x1b[0m');
 
   // 2. Scan semua konfigurasi klien di src/data/clients/*.js
   const clientFiles = fs.readdirSync(clientsDir).filter(
@@ -84,12 +94,7 @@ async function prerender() {
     <meta name="twitter:image" content="${escapeHtml(ogImage)}" />
   `;
 
-      let clientHtml = rawTemplate;
-
-      // Ganti <title> default
-      if (clientHtml.includes('<title>')) {
-        clientHtml = clientHtml.replace(/<title>[\s\S]*?<\/title>/i, '');
-      }
+      let clientHtml = cleanHead(rawTemplate);
 
       // Ganti favicon bila berbeda
       if (favicon && clientHtml.includes('rel="icon"')) {
@@ -113,12 +118,12 @@ async function prerender() {
         fs.mkdirSync(generatorOutputDir, { recursive: true });
       }
 
-      let generatorHtml = rawTemplate;
+      let generatorHtml = cleanHead(rawTemplate);
       const generatorTags = `
+    <!-- Generator Tamu - Protected Admin Route -->
     <title>Generator Link Tamu - /${slug}</title>
     <meta name="robots" content="noindex, nofollow" />
   `;
-      generatorHtml = generatorHtml.replace(/<title>[\s\S]*?<\/title>/i, '');
       generatorHtml = generatorHtml.replace('</head>', `${generatorTags}\n  </head>`);
 
       fs.writeFileSync(path.join(generatorOutputDir, 'index.html'), generatorHtml, 'utf8');

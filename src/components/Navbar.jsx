@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Home, Users, Calendar, Sparkles, Image as ImageIcon, Gift } from 'lucide-react';
 import { useClient } from '../context/ClientContext';
 
@@ -44,14 +44,13 @@ const ALL_NAV_DEFS = [
 ];
 
 const Navbar = ({ isOpen }) => {
-  const context = useClient();
-  const client = context?.client || context || {};
+  const client = useClient();
   const [activeSection, setActiveSection] = useState('hero');
   const [isScrolled, setIsScrolled] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
   // Filter menu items dynamically according to client config and presence of content
-  const navItems = ALL_NAV_DEFS.filter(def => def.isVisible(client));
+  const navItems = useMemo(() => ALL_NAV_DEFS.filter(def => def.isVisible(client)), [client]);
 
   // Scroll-spy observer
   useEffect(() => {
@@ -104,7 +103,7 @@ const Navbar = ({ isOpen }) => {
         window.visualViewport.removeEventListener('resize', handleResize);
       }
     };
-  }, [isOpen, navItems.length]);
+  }, [isOpen, navItems]);
 
   const scrollToSection = (id) => {
     const el = document.getElementById(id);

@@ -243,26 +243,67 @@ Hasil build bundel HTML, JS, dan CSS yang teroptimasi dengan chunk terisolasi pe
 npm run preview
 ```
 
-### Panduan Deploy
+### Panduan Deploy ke Vercel
 
-#### 1. Vercel
-Tambahkan file konfigurasi `vercel.json` di root proyek:
-```json
-{
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
-}
-```
+Proyek ini telah dikonfigurasi penuh dan siap dideploy langsung ke **Vercel** dengan arsitektur SPA performa tinggi, caching optimal, pre-rendered Open Graph per slug, serta header keamanan terintegrasi di [`vercel.json`](file:///home/serv/Projects/development/undangan-adat/vercel.json).
 
-#### 2. Netlify
-Buat file `public/_redirects`:
-```text
-/*    /index.html   200
-```
+#### 1. Ringkasan Langkah Deploy
+1. **Push Proyek ke Git Repository**:
+   Pastikan seluruh perubahan terkini sudah di-commit dan di-push ke GitHub, GitLab, atau Bitbucket Anda.
+   ```bash
+   git add .
+   git commit -m "feat: siapkan konfigurasi deploy Vercel dan pre-render OG"
+   git push origin main
+   ```
+2. **Buka Vercel Dashboard**:
+   - Masuk ke [vercel.com](https://vercel.com/) dan klik tombol **"Add New..." > "Project"**.
+   - Pilih repository Git proyek undangan ini lalu klik **"Import"**.
+3. **Konfigurasi Project Settings**:
+   - **Framework Preset**: Pilih `Vite` (Vercel biasanya mendeteksi secara otomatis).
+   - **Root Directory**: `./` (biarkan default).
+   - **Build Command**: `npm run build` (menjalankan vite build dan pre-rendering Open Graph otomatis).
+   - **Output Directory**: `dist`.
+4. **Isi Environment Variables**:
+   Buka accordion **Environment Variables** sebelum menekan tombol Deploy, lalu tambahkan variabel yang dibutuhkan (lihat daftar checklist di bawah).
+5. **Deploy**:
+   Klik tombol **"Deploy"**. Vercel akan menjalankan build dalam hitungan detik.
 
-#### 3. Cloudflare Pages
-- Preset: `Vite`
-- Build command: `npm run build`
-- Output directory: `dist`
+---
+
+### 📋 Checklist Hal yang Harus Dilakukan Manual di Dashboard Vercel
+
+Berikut daftar pengaturan yang perlu Anda periksa dan isi secara manual di Dashboard Vercel:
+
+| No | Pengaturan di Vercel | Lokasi Menu | Nilai / Tindakan | Deskripsi |
+|:---|:---|:---|:---|:---|
+| 1 | **Framework Preset** | *Project Settings > General* | `Vite` | Memastikan runtime build Vite dikenali secara tepat. |
+| 2 | **Build Command** | *Project Settings > General* | `npm run build` | Menjalankan build bundle sekaligus script `prerender.mjs` untuk Open Graph klien. |
+| 3 | **Output Directory** | *Project Settings > General* | `dist` | Folder output statis hasil kompilasi. |
+| 4 | **VITE_APP_URL** | *Settings > Environment Variables* | `https://nama-proyek.vercel.app` (atau domain kustom Anda) | **Sangat Disarankan**: Dibutuhkan agar meta tag `og:image` dan `og:url` terisi URL absolut lengkap sehingga kartu pratinjau muncul sempurna saat link dibagikan di WhatsApp, Telegram, Twitter, dan Facebook. |
+| 5 | **VITE_BRAND_NAME** | *Settings > Environment Variables* | `"Kalyana Undangan Adat"` | Nama bisnis/brand Anda yang ditampilkan di landing page netral root (`/`) pada mode produksi. |
+| 6 | **VITE_WHATSAPP_NUMBER** | *Settings > Environment Variables* | `6281234567890` (tanpa tanda `+`) | Nomor WhatsApp customer service/admin yang dituju ketika tombol "Konsultasi Pembuatan Undangan" pada root ditekan. |
+| 7 | **Custom Domain** *(Opsional)* | *Settings > Domains* | Misal: `undangan.namabrand.com` | Masukkan domain Anda sendiri dan ikuti instruksi DNS CNAME/A record dari Vercel. |
+
+---
+
+#### 2. Konfigurasi `vercel.json` yang Diterapkan
+File [`vercel.json`](file:///home/serv/Projects/development/undangan-adat/vercel.json) telah dilengkapi konfigurasi tingkat produksi:
+- **SPA Rewrites**: Meroute seluruh path non-file (`/(.*)`) ke `/index.html` dengan tetap memprioritaskan file statis yang ada di disk.
+- **Cache-Control Aset**:
+  - `/assets/*` dan file biner/media diberi header `public, max-age=31536000, immutable` (cache 1 tahun di CDN & browser).
+  - `/index.html` dan file `.html` diberi header `no-cache, no-store, must-revalidate` agar update kode selalu langsung diterima pengguna tanpa masalah stale cache.
+- **Header Keamanan**:
+  - `X-Content-Type-Options: nosniff`
+  - `X-Frame-Options: SAMEORIGIN`
+  - `X-XSS-Protection: 1; mode=block`
+  - `Referrer-Policy: strict-origin-when-cross-origin`
+  - `Permissions-Policy: camera=(), microphone=(), geolocation=()`
+
+#### 3. Pre-Render Open Graph & Noindex Otomatis
+Setiap kali `npm run build` dijalankan (termasuk saat Vercel melakukan build otomatis via git push):
+- Menghasilkan file statis `dist/{slug}/index.html` dan `dist/{slug}.html` yang sudah disuntik tag Open Graph dan Twitter Cards spesifik tiap klien (judul, deskripsi, foto sampul, URL). Crawler WhatsApp/Facebook yang tidak menjalankan JavaScript dapat langsung membaca thumbnail pratinjau secara instan.
+- Menghasilkan `dist/{slug}/generator/index.html` yang disuntik `<meta name="robots" content="noindex, nofollow" />` sehingga generator terlindung dari pencarian mesin pencari.
+- Menghasilkan `dist/index.html` netral dengan tag `<meta name="robots" content="noindex, nofollow" />` untuk menjaga privasi platform.
 
 ---
 

@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useEffect } from 'react';
+/* eslint-disable react-refresh/only-export-components */
+/* oxlint-disable react/only-export-components */
+import React, { createContext, useContext, useEffect, useMemo } from 'react';
 
 const ClientContext = createContext(null);
 
@@ -62,13 +64,16 @@ export const ClientProvider = ({ clientData, children }) => {
     }
   }, [clientData]);
 
-  if (!clientData) return null;
-
   // Mendukung baik const client = useClient() maupun const { client } = useClient()
-  const contextValue = {
-    ...clientData,
-    client: clientData,
-  };
+  const contextValue = useMemo(() => {
+    if (!clientData) return null;
+    return {
+      ...clientData,
+      client: clientData,
+    };
+  }, [clientData]);
+
+  if (!clientData) return null;
 
   return (
     <ClientContext.Provider value={contextValue}>

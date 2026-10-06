@@ -166,11 +166,15 @@ function InvitationContent() {
 function App() {
   const [route, setRoute] = useState(() => resolveCurrentRoute());
   const [clientData, setClientData] = useState(() => getClientData(route.slug));
-  const [isLoading, setIsLoading] = useState(!route.isRoot && !clientData);
+  const [hasError, setHasError] = useState(false);
+
+  // Status loading dihitung secara reaktif tanpa synchronous setState di dalam effect
+  const isLoading = !route.isRoot && !hasError && (!clientData || clientData.slug !== route.slug);
 
   useEffect(() => {
     const handlePopState = () => {
       setRoute(resolveCurrentRoute());
+      setHasError(false);
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -183,20 +187,21 @@ function App() {
     }
 
     let isMounted = true;
-    setIsLoading(true);
 
     fetchClientData(route.slug)
       .then((data) => {
         if (isMounted) {
           setClientData(data);
-          setIsLoading(false);
+          if (!data) {
+            setHasError(true);
+          }
         }
       })
       .catch((err) => {
         if (isMounted) {
           console.error('[App] Gagal memuat data klien:', err);
           setClientData(null);
-          setIsLoading(false);
+          setHasError(true);
         }
       });
 

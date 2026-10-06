@@ -12,7 +12,7 @@ export const DEFAULT_CLIENT_SLUG = 'arjuna-srikandi';
 // Vite / Rollup memecah tiap file ./clients/*.js menjadi file .js terpisah di dist/
 let clientLoaders = {};
 try {
-  clientLoaders = import.meta.glob('./clients/*.js');
+  clientLoaders = import.meta.glob(['./clients/*.js', '!./clients/client-template.js']);
 } catch {
   // Lingkungan non-Vite
 }
