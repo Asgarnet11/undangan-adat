@@ -1,6 +1,7 @@
 import React from 'react';
 import { Calendar, MapPin, Clock } from 'lucide-react';
 import { useClient } from '../context/ClientContext';
+import { formatTanggal } from '../utils/dateFormatter';
 
 const Events = () => {
   const client = useClient();
@@ -38,7 +39,7 @@ const Events = () => {
                   </div>
                   <div className="event-info-text text-left">
                     <span className="event-info-label font-sans">Hari &amp; Tanggal</span>
-                    <p className="text-white font-serif">{event.date}</p>
+                    <p className="text-white font-serif">{formatTanggal(event.date)}</p>
                   </div>
                 </div>
                 

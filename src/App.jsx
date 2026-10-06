@@ -9,11 +9,13 @@ import Gallery from './components/Gallery';
 import GiftSection from './components/Gift';
 import Navbar from './components/Navbar';
 import Landing from './components/Landing';
+import ProductionLanding from './components/ProductionLanding';
 import NotFound from './components/NotFound';
 import GuestLinkGenerator from './components/GuestLinkGenerator';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ClientProvider, useClient } from './context/ClientContext';
-import { resolveCurrentRoute, getClientData } from './services/clientDataService';
+import { resolveCurrentRoute, fetchClientData, getClientData } from './services/clientDataService';
+import { formatTanggal } from './utils/dateFormatter';
 import { Volume2, VolumeX } from 'lucide-react';
 import { useAudioPlayer } from './hooks/useAudioPlayer';
 import { useScrollReveal } from './hooks/useScrollReveal';
@@ -87,13 +89,13 @@ function InvitationContent() {
 
   return (
     <div className="app-container">
-      {/* Cover / Opening Screen */}
+      {/* Cover / Layar Pembuka */}
       <Cover isOpen={isOpen} onOpen={handleOpen} />
 
-      {/* Responsive Navigation (Top Navbar Desktop + Bottom App-Bar Mobile) */}
+      {/* Navigasi Responsif */}
       <Navbar isOpen={isOpen} />
       
-      {/* Main Invitation Content */}
+      {/* Konten Utama Undangan */}
       <main 
         className="main-content"
         style={{
@@ -116,7 +118,7 @@ function InvitationContent() {
             {isSectionActive('gallery') && <Gallery />}
             {isSectionActive('gift') && <GiftSection />}
             
-            {/* Footer Section */}
+            {/* Bagian Penutup / Footer */}
             {isSectionActive('closing') && (
               <footer className="footer-section section text-center">
                 <div className="section-container content-z reveal-on-scroll">
@@ -131,7 +133,7 @@ function InvitationContent() {
                   </p>
                   <div className="gold-divider-small" style={{ margin: '1.2rem auto' }}></div>
                   <p className="footer-credit font-sans">
-                    {client.closing?.credit || `The Wedding of ${client.couple?.groom?.shortName} & ${client.couple?.bride?.shortName} • ${client.events?.[0]?.date?.fullDate || ''}`}
+                    {client.closing?.credit || `The Wedding of ${client.couple?.groom?.shortName || ''} & ${client.couple?.bride?.shortName || ''} • ${formatTanggal(client.events?.[0]?.date || client.date, { withDay: false })}`}
                   </p>
                 </div>
               </footer>
@@ -158,10 +160,13 @@ function InvitationContent() {
 
 /**
  * Root Router App
- * Menangani pemilihan klien via slug URL, generator link tamu, serta halaman fallback 404 & Landing.
+ * Menangani pemilihan klien via slug URL, generator link tamu terlindungi,
+ * lazy-load chunk konfigurasi, serta halaman root aman (dev portal vs production landing).
  */
 function App() {
   const [route, setRoute] = useState(() => resolveCurrentRoute());
+  const [clientData, setClientData] = useState(() => getClientData(route.slug));
+  const [isLoading, setIsLoading] = useState(!route.isRoot && !clientData);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -171,25 +176,84 @@ function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // 1. Rute Halaman Root (/) -> Landing sederhana dengan daftar klien aktif
+  // Fetch / lazy-load konfigurasi data klien per slug untuk keamanan bundel
+  useEffect(() => {
+    if (route.isRoot) {
+      return;
+    }
+
+    let isMounted = true;
+    setIsLoading(true);
+
+    fetchClientData(route.slug)
+      .then((data) => {
+        if (isMounted) {
+          setClientData(data);
+          setIsLoading(false);
+        }
+      })
+      .catch((err) => {
+        if (isMounted) {
+          console.error('[App] Gagal memuat data klien:', err);
+          setClientData(null);
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [route.slug, route.isRoot]);
+
+  // 1. Rute Halaman Root (/)
   if (route.isRoot) {
-    return <Landing />;
+    // Di mode development: Tampilkan direktori klien untuk kemudahan uji coba
+    if (import.meta.env && import.meta.env.DEV) {
+      return <Landing />;
+    }
+    // Di mode produksi: Tampilkan landing netral brand + kontak WA + noindex
+    return <ProductionLanding />;
   }
 
-  // 2. Rute Generator Link Tamu (/generator atau ?page=generator)
-  if (route.isGenerator) {
-    return <GuestLinkGenerator initialSlug={route.slug || 'arjuna-srikandi'} />;
+  // Tampilkan loading screen saat memuat chunk klien
+  if (isLoading) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#052016',
+        color: '#d4af37'
+      }}>
+        <div style={{
+          width: '42px',
+          height: '42px',
+          border: '3px solid rgba(212, 175, 55, 0.2)',
+          borderTopColor: '#d4af37',
+          borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite',
+          marginBottom: '1rem'
+        }} />
+        <p className="font-serif text-gold" style={{ fontSize: '0.95rem', letterSpacing: '1px' }}>
+          Memuat Undangan...
+        </p>
+      </div>
+    );
   }
-
-  // 3. Rute Undangan Klien (/{slug} atau ?client={slug})
-  const clientData = getClientData(route.slug);
 
   // Jika slug tidak ditemukan di registry -> 404 Undangan Tidak Ditemukan
   if (!clientData) {
-    return <NotFound slug={route.slug} />;
+    return <NotFound requestedSlug={route.slug} />;
   }
 
-  // Klien ditemukan -> Render template undangan dengan ClientProvider
+  // 2. Rute Generator Link Tamu (Terproteksi Token adminKey)
+  if (route.isGenerator) {
+    return <GuestLinkGenerator client={clientData} />;
+  }
+
+  // 3. Rute Undangan Klien Aktif
   return (
     <ErrorBoundary>
       <ClientProvider clientData={clientData}>

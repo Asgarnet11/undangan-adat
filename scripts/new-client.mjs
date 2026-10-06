@@ -71,6 +71,8 @@ if (fs.existsSync(templatePublicDir)) {
   console.log(`\x1b[33m⚠ Folder template publik tidak ditemukan. Folder kosong dibuat di:\x1b[0m public/clients/${slug}/`);
 }
 
+import crypto from 'node:crypto';
+
 // 2. Buat file konfigurasi data klien dari client-template.js
 if (!fs.existsSync(templateConfigPath)) {
   console.error(`\x1b[31mError: File template tidak ditemukan di: ${templateConfigPath}\x1b[0m`);
@@ -79,15 +81,19 @@ if (!fs.existsSync(templateConfigPath)) {
 
 let templateContent = fs.readFileSync(templateConfigPath, 'utf8');
 
+// Buat token acak aman minimal 16 karakter (32 karakter hex)
+const generatedAdminKey = crypto.randomBytes(16).toString('hex');
+
 // Nama variabel camelCase
 const camelCaseName = slug
   .split('-')
   .map((part, index) => index === 0 ? part : part.charAt(0).toUpperCase() + part.slice(1))
   .join('');
 
-// Ganti placeholder nama-klien dengan slug baru
+// Ganti placeholder nama-klien dan token admin dengan nilai baru
 templateContent = templateContent
   .replace(/slug:\s*["']nama-klien["']/g, `slug: "${slug}"`)
+  .replace(/adminKey:\s*["']TOKEN_ADMIN_ACAK_MINIMAL_16_KARAKTER["']/g, `adminKey: "${generatedAdminKey}"`)
   .replace(/\/clients\/nama-klien\//g, `/clients/${slug}/`)
   .replace(/export const clientTemplate =/g, `export const ${camelCaseName}Config =`);
 
@@ -112,6 +118,8 @@ console.log(`
 3. Lihat undangan di browser:
    \x1b[33mhttp://localhost:5173/${slug}\x1b[0m
 
-4. Generate link WhatsApp tamu:
-   \x1b[33mhttp://localhost:5173/generator?client=${slug}\x1b[0m
+4. Tautan Generator Link Tamu (Terproteksi Token):
+   \x1b[33mhttp://localhost:5173/${slug}/generator?key=${generatedAdminKey}\x1b[0m
+   \x1b[90mToken Admin: ${generatedAdminKey}\x1b[0m
 `);
+

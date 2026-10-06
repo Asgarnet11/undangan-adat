@@ -8,7 +8,8 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 
 import { sanitizeGuestName, generateGuestInvitationLink } from '../src/utils/sanitizeGuest.js';
-import { clientRegistry, validateClientConfig, getAvailableClients, DEFAULT_CLIENT_SLUG } from '../src/data/clientRegistry.js';
+import { validateClientConfig } from '../src/data/clientRegistry.js';
+import { formatTanggal } from '../src/utils/dateFormatter.js';
 import { arjunaSrikandiConfig } from '../src/data/clients/arjuna-srikandi.js';
 import { ramaShintaConfig } from '../src/data/clients/rama-shinta.js';
 
@@ -41,10 +42,19 @@ const link = generateGuestInvitationLink('arjuna-srikandi', 'Bapak Ahmad', 'http
 assert.strictEqual(link, 'https://undangan.test/arjuna-srikandi?to=Bapak%20Ahmad');
 console.log('✔ Link generator test passed:', link);
 
-console.log('\n--- 2. Testing clientRegistry & Config Validator ---');
-// Verify registered clients
-assert(clientRegistry['arjuna-srikandi'], 'arjuna-srikandi must be in clientRegistry');
-assert(clientRegistry['rama-shinta'], 'rama-shinta must be in clientRegistry');
+console.log('\n--- 2. Testing formatTanggal (Indonesian Date Formatter) ---');
+assert.strictEqual(formatTanggal('2027-12-12'), 'Minggu, 12 Desember 2027');
+assert.strictEqual(formatTanggal('2027-12-12', { withDay: false }), '12 Desember 2027');
+assert.strictEqual(formatTanggal('2027-12-12', { format: 'dotted' }), '12 . 12 . 2027');
+assert.strictEqual(formatTanggal('2027-09-18'), 'Sabtu, 18 September 2027');
+assert.strictEqual(formatTanggal('2020-03-10', { withDay: false }), '10 Maret 2020');
+console.log('✔ formatTanggal assertions passed for full, dateOnly, and dotted formats.');
+
+console.log('\n--- 3. Testing Token Admin (adminKey) & Config Validator ---');
+// Verify adminKey presence and length (minimal 16 chars)
+assert(typeof arjunaSrikandiConfig.adminKey === 'string' && arjunaSrikandiConfig.adminKey.length >= 16, 'arjuna adminKey >= 16 chars');
+assert(typeof ramaShintaConfig.adminKey === 'string' && ramaShintaConfig.adminKey.length >= 16, 'rama adminKey >= 16 chars');
+console.log('✔ adminKey valid and secure for all clients.');
 
 // Validation test for arjuna-srikandi
 const isArjunaValid = validateClientConfig(arjunaSrikandiConfig);
@@ -56,12 +66,7 @@ const isRamaValid = validateClientConfig(ramaShintaConfig);
 assert(isRamaValid, 'ramaShintaConfig must be 100% valid');
 console.log('✔ ramaShintaConfig validated successfully.');
 
-// Test available clients list
-const available = getAvailableClients();
-assert(available.length >= 2, 'Available clients should include at least 2 clients');
-console.log('✔ Available clients registered:', available.map(c => c.slug).join(', '));
-
-console.log('\n--- 3. Testing Assets Integrity ---');
+console.log('\n--- 4. Testing Assets Integrity ---');
 const clients = ['arjuna-srikandi', 'rama-shinta', 'template'];
 for (const slug of clients) {
   const dir = path.join(rootDir, 'public', 'clients', slug);
@@ -76,19 +81,17 @@ for (const slug of clients) {
   console.log(`✔ Assets for '${slug}' complete and verified.`);
 }
 
-console.log('\n--- 4. Testing Flexible Layout Schema ---');
+console.log('\n--- 5. Testing Flexible Layout Schema & ISO Dates ---');
 // Arjuna: 2 events
 assert.strictEqual(arjunaSrikandiConfig.events.length, 2, 'Arjuna has 2 events');
-// Rama: 1 event (test case for single event adaptability)
+assert.match(arjunaSrikandiConfig.events[0].date, /^\d{4}-\d{2}-\d{2}$/, 'Event date is ISO');
+// Rama: 1 event
 assert.strictEqual(ramaShintaConfig.events.length, 1, 'Rama has 1 single event');
+assert.match(ramaShintaConfig.events[0].date, /^\d{4}-\d{2}-\d{2}$/, 'Event date is ISO');
 
 // Bank accounts flexibility
 assert(Array.isArray(arjunaSrikandiConfig.gift.bankAccounts), 'Bank accounts is array');
 assert(arjunaSrikandiConfig.gift.bankAccounts.length >= 1, 'Has at least 1 account');
 
-// Active sections
-assert(arjunaSrikandiConfig.activeSections.includes('events'));
-assert(arjunaSrikandiConfig.activeSections.includes('gallery'));
-
-console.log('✔ All flexible data schema assertions passed!');
+console.log('✔ All flexible data schema and ISO date assertions passed!');
 console.log('\n✨ ALL AUTOMATED TESTS PASSED SUCCESSFULLY! ✨\n');

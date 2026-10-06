@@ -1,13 +1,15 @@
 import React from 'react';
 import { useClient } from '../context/ClientContext';
 import Countdown from './Countdown';
+import { formatTanggal } from '../utils/dateFormatter';
 
 const Hero = () => {
   const client = useClient();
   const eyebrow = client.hero?.eyebrow || "Walimatul 'Urs";
   const groomName = client.couple?.groom?.shortName || 'Pria';
   const brideName = client.couple?.bride?.shortName || 'Wanita';
-  const dateStr = client.hero?.date || client.date || '';
+  const rawDate = client.hero?.date || client.date || client.events?.[0]?.date || '';
+  const dateStr = formatTanggal(rawDate);
 
   return (
     <section id="hero" className="section hero-section text-center">

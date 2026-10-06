@@ -39,8 +39,19 @@ const Landing = () => {
               style={{ padding: '2rem 1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', textAlign: 'center', margin: 0 }}
             >
               <div>
-                <span className="font-sans text-xs text-gold" style={{ textTransform: 'uppercase', letterSpacing: '2px', opacity: 0.8, display: 'block', marginBottom: '0.5rem' }}>
-                  Slug: /{c.slug}
+                <span style={{ display: 'block', marginBottom: '0.5rem' }}>
+                  <span className="font-sans text-xs text-gold" style={{ opacity: 0.8 }}>slug: </span>
+                  <code style={{
+                    fontFamily: 'monospace',
+                    textTransform: 'none',
+                    background: 'rgba(0,0,0,0.3)',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    color: '#f3e5ab',
+                    fontSize: '0.85rem'
+                  }}>
+                    /{c.slug.toLowerCase()}
+                  </code>
                 </span>
                 <h2 className="font-display text-gold" style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>
                   {c.names}
@@ -60,7 +71,7 @@ const Landing = () => {
                   Buka Undangan
                 </a>
                 <a 
-                  href={`/generator?client=${c.slug}`}
+                  href={`/${c.slug}/generator${c.adminKey ? `?key=${c.adminKey}` : ''}`}
                   className="btn-instagram font-sans"
                   style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '8px 16px', fontSize: '0.82rem', margin: 0 }}
                 >

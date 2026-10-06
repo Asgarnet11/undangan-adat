@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
-import { getAvailableClients, getClientConfig } from '../data/clientRegistry';
-import { Copy, Check, Download, MessageCircle, Link as LinkIcon, Users, ArrowLeft } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Copy, Check, Download, MessageCircle, Link as LinkIcon, Users, ArrowLeft, KeyRound } from 'lucide-react';
+import { setRobotsNoIndex } from '../utils/seo';
+import AccessDenied from './AccessDenied';
 
 const DEFAULT_MESSAGE_TEMPLATE = `Kepada Yth.
 Bapak/Ibu/Saudara/i: *{nama}*
@@ -16,24 +17,36 @@ Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i
 
 Terima kasih.`;
 
-const GuestLinkGenerator = ({ initialSlug }) => {
-  const clients = getAvailableClients();
-  const [selectedSlug, setSelectedSlug] = useState(initialSlug || clients[0]?.slug || 'arjuna-srikandi');
+const GuestLinkGenerator = ({ client }) => {
+  const slug = String(client?.slug || '').toLowerCase();
+  const coupleNames = `${client?.couple?.groom?.shortName || 'Pria'} & ${client?.couple?.bride?.shortName || 'Wanita'}`;
+
+  // Pasang noindex pada halaman generator
+  useEffect(() => {
+    setRobotsNoIndex();
+    if (client?.couple) {
+      document.title = `Generator Tamu - ${coupleNames}`;
+    }
+  }, [client, coupleNames]);
+
+  // Validasi token otorisasi admin (?key=TOKEN)
+  const tokenFromUrl = typeof window !== 'undefined' 
+    ? new URLSearchParams(window.location.search).get('key') || '' 
+    : '';
+
+  const isAuthorized = Boolean(
+    client && 
+    client.adminKey && 
+    tokenFromUrl && 
+    tokenFromUrl.trim() === client.adminKey.trim()
+  );
+
   const [namesInput, setNamesInput] = useState(
     'Budi Santoso\nKeluarga Bapak Hendra\ndr. Siti Rahmawati & Partner\nRian Pratama\nAnisa Putri'
   );
   const [messageTemplate, setMessageTemplate] = useState(DEFAULT_MESSAGE_TEMPLATE);
   const [copiedId, setCopiedId] = useState(null);
   const [copyAllStatus, setCopyAllStatus] = useState(false);
-
-  const activeClient = useMemo(() => {
-    return getClientConfig(selectedSlug);
-  }, [selectedSlug]);
-
-  const coupleNames = useMemo(() => {
-    if (!activeClient) return 'Mempelai';
-    return `${activeClient.couple?.groom?.shortName || 'Pria'} & ${activeClient.couple?.bride?.shortName || 'Wanita'}`;
-  }, [activeClient]);
 
   // Origin URL untuk tautan
   const originUrl = typeof window !== 'undefined' ? window.location.origin : 'https://undangan.com';
@@ -43,7 +56,7 @@ const GuestLinkGenerator = ({ initialSlug }) => {
     const lines = namesInput.split('\n').map(l => l.trim()).filter(Boolean);
     return lines.map((name, index) => {
       const encodedName = encodeURIComponent(name);
-      const url = `${originUrl}/${selectedSlug}?to=${encodedName}`;
+      const url = `${originUrl}/${slug}?to=${encodedName}`;
       
       const message = messageTemplate
         .replace(/\{nama\}/g, name)
@@ -60,7 +73,12 @@ const GuestLinkGenerator = ({ initialSlug }) => {
         waLink
       };
     });
-  }, [namesInput, selectedSlug, originUrl, messageTemplate, coupleNames]);
+  }, [namesInput, slug, originUrl, messageTemplate, coupleNames]);
+
+  // Jika token tidak cocok atau tidak ada -> Tampilkan Akses Ditolak
+  if (!isAuthorized) {
+    return <AccessDenied slug={client?.slug} />;
+  }
 
   const handleCopy = (text, id) => {
     navigator.clipboard.writeText(text).then(() => {
@@ -90,7 +108,7 @@ const GuestLinkGenerator = ({ initialSlug }) => {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `daftar-tamu-${selectedSlug}.csv`;
+    link.download = `daftar-tamu-${slug}.csv`;
     link.click();
     URL.revokeObjectURL(link.href);
   };
@@ -104,7 +122,7 @@ const GuestLinkGenerator = ({ initialSlug }) => {
         {/* Navigation Back */}
         <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <a 
-            href={`/${selectedSlug}?open=true`}
+            href={`/${slug}?open=true`}
             className="btn-instagram font-sans"
             style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}
           >
@@ -112,58 +130,53 @@ const GuestLinkGenerator = ({ initialSlug }) => {
             Kembali ke Undangan {coupleNames}
           </a>
 
-          <a 
-            href="/"
-            className="font-sans text-xs text-gold"
-            style={{ textDecoration: 'none', opacity: 0.8 }}
-          >
-            Portal Utama
-          </a>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            background: 'rgba(212, 175, 55, 0.12)',
+            padding: '4px 10px',
+            borderRadius: '20px',
+            border: '1px solid rgba(212, 175, 55, 0.3)',
+            fontSize: '0.75rem',
+            color: '#d4af37'
+          }}>
+            <KeyRound size={13} />
+            <span>Terotorisasi Admin</span>
+          </div>
         </div>
 
         {/* Title Header */}
         <div className="text-center" style={{ marginBottom: '2.5rem' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'var(--color-secondary)', marginBottom: '0.5rem' }}>
             <Users size={24} />
-            <span className="font-sans text-xs uppercase" style={{ letterSpacing: '3px' }}>Alat Distribusi Undangan</span>
+            <span className="font-sans text-xs" style={{ letterSpacing: '2px', textTransform: 'uppercase' }}>
+              Distribusi Undangan
+            </span>
           </div>
           <h1 className="font-display text-gold" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.5rem)', margin: '0 0 0.8rem' }}>
-            Generator Link &amp; Pesan Tamu
+            Generator Link Tamu
           </h1>
-          <p className="font-serif text-white" style={{ fontSize: '0.95rem', opacity: 0.85, maxWidth: '640px', margin: '0 auto', lineHeight: 1.6 }}>
-            Masukkan nama-nama tamu undangan (satu nama per baris) untuk membuat tautan khusus yang aman dan langsung siap dikirimkan melalui WhatsApp.
+          <p className="font-serif text-white" style={{ fontSize: '1rem', opacity: 0.9, maxWidth: '640px', margin: '0 auto 0.5rem', lineHeight: 1.6 }}>
+            Undangan Pernikahan {coupleNames}
+          </p>
+          <p className="font-sans" style={{ fontSize: '0.85rem', color: '#f3e5ab' }}>
+            Slug Klien:{' '}
+            <code style={{
+              fontFamily: 'monospace',
+              textTransform: 'none',
+              background: 'rgba(0,0,0,0.4)',
+              padding: '2px 8px',
+              borderRadius: '4px',
+              fontSize: '0.85rem'
+            }}>
+              /{slug}
+            </code>
           </p>
         </div>
 
         {/* Form Controls Card */}
         <div className="ayat-card" style={{ padding: '2rem', marginBottom: '2rem' }}>
-          {/* Client Selector */}
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label className="font-sans text-xs text-gold" style={{ display: 'block', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '0.5rem', fontWeight: 600 }}>
-              Pilih Klien Undangan:
-            </label>
-            <select
-              value={selectedSlug}
-              onChange={(e) => setSelectedSlug(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px 14px',
-                borderRadius: '8px',
-                background: 'rgba(0,0,0,0.5)',
-                color: '#fff',
-                border: '1px solid rgba(212,175,55,0.4)',
-                fontFamily: 'inherit',
-                fontSize: '0.95rem'
-              }}
-            >
-              {clients.map((c) => (
-                <option key={c.slug} value={c.slug} style={{ background: '#052016', color: '#fff' }}>
-                  {c.names} (/{c.slug})
-                </option>
-              ))}
-            </select>
-          </div>
-
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
             {/* Input Daftar Nama */}
             <div>

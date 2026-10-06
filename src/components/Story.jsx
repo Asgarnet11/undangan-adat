@@ -1,6 +1,7 @@
 import React from 'react';
 import { Sparkles, Heart, Gem, CalendarHeart, BookmarkCheck } from 'lucide-react';
 import { useClient } from '../context/ClientContext';
+import { formatTanggal } from '../utils/dateFormatter';
 
 const iconMap = {
   sparkles: Sparkles,
@@ -52,7 +53,7 @@ const Story = () => {
                   <div className="timeline-card">
                     <div className="timeline-card-header">
                       <span className="timeline-year font-display text-gold">{item.year}</span>
-                      <span className="timeline-date font-sans">{item.date}</span>
+                      <span className="timeline-date font-sans">{formatTanggal(item.date, { withDay: false })}</span>
                     </div>
 
                     <h3 className="timeline-title font-display">{item.title}</h3>

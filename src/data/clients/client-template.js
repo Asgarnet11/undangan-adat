@@ -17,6 +17,10 @@ export const clientTemplate = {
   // [WAJIB] Slug unik untuk URL (huruf kecil, gunakan tanda hubung, contoh: 'budi-ani')
   slug: "nama-klien",
 
+  // [WAJIB] Token rahasia admin untuk akses Generator Link Tamu (minimal 16 karakter acak)
+  // Digunakan untuk URL: /{slug}/generator?key=TOKEN
+  adminKey: "TOKEN_ADMIN_ACAK_MINIMAL_16_KARAKTER",
+
   // [WAJIB] Metadata Halaman (SEO, tab peramban, dan pratinjau media sosial WhatsApp/Instagram)
   meta: {
     // Judul pada tab browser & preview share
@@ -65,8 +69,8 @@ export const clientTemplate = {
   // [WAJIB] Bagian Hero (Layar Pertama setelah Buka Undangan)
   hero: {
     eyebrow: "Walimatul 'Urs", // Judul pengantar adat/religius (misal: "Pernikahan Suci", "Om Swastyastu", dll)
-    date: "Minggu, 12 Desember 2027", // Teks tanggal yang tampil di layar
-    weddingDateISO: "2027-12-12T09:00:00", // Format ISO (YYYY-MM-DDTHH:mm:ss) untuk countdown timer
+    date: "2027-12-12", // Format ISO (YYYY-MM-DD), diformat otomatis oleh formatTanggal()
+    weddingDateISO: "2027-12-12T09:00:00", // Format ISO lengkap untuk countdown timer
   },
 
   // [WAJIB] Data Pasangan Mempelai

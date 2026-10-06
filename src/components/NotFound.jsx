@@ -1,8 +1,16 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { getAvailableClients } from '../data/clientRegistry';
+import { setRobotsNoIndex } from '../utils/seo';
 
-const NotFound = ({ requestedSlug }) => {
-  const availableClients = getAvailableClients();
+const NotFound = ({ requestedSlug, slug }) => {
+  useEffect(() => {
+    setRobotsNoIndex();
+    document.title = 'Undangan Tidak Ditemukan';
+  }, []);
+
+  const activeSlug = String(requestedSlug || slug || '').toLowerCase();
+  const isDev = Boolean(import.meta.env && import.meta.env.DEV);
+  const availableClients = isDev ? getAvailableClients() : [];
 
   return (
     <div className="section notfound-section text-center" style={{ minHeight: '100vh', justifyContent: 'center', padding: '2rem 1.5rem', background: '#052016' }}>
@@ -27,13 +35,29 @@ const NotFound = ({ requestedSlug }) => {
           <div className="gold-divider-small" style={{ margin: '1rem auto 1.5rem' }}></div>
 
           <p className="font-serif text-white" style={{ fontSize: '1.05rem', lineHeight: '1.7', opacity: 0.85, marginBottom: '2rem' }}>
-            Mohon maaf, tautan undangan pernikahan <strong className="text-gold">&ldquo;{requestedSlug || ''}&rdquo;</strong> yang Anda tuju tidak terdaftar atau telah berpindah alamat.
+            Mohon maaf, tautan undangan pernikahan{' '}
+            {activeSlug ? (
+              <code style={{
+                fontFamily: 'monospace',
+                textTransform: 'none',
+                background: 'rgba(212, 175, 55, 0.15)',
+                padding: '2px 8px',
+                borderRadius: '4px',
+                color: '#f3e5ab'
+              }}>
+                /{activeSlug}
+              </code>
+            ) : (
+              'yang Anda tuju'
+            )}{' '}
+            tidak terdaftar atau telah berpindah alamat.
           </p>
 
-          {availableClients.length > 0 && (
+          {/* Hanya tampilkan daftar klien di mode development */}
+          {isDev && availableClients.length > 0 && (
             <div style={{ marginBottom: '2rem', textAlign: 'left', background: 'rgba(0,0,0,0.3)', padding: '1.2rem', borderRadius: '8px', border: '1px solid rgba(212,175,55,0.2)' }}>
-              <p className="font-sans text-xs text-gold" style={{ textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '0.8rem', fontWeight: 600 }}>
-                Undangan yang Tersedia:
+              <p className="font-sans text-xs text-gold" style={{ letterSpacing: '1.5px', marginBottom: '0.8rem', fontWeight: 600 }}>
+                [DEV MODE] Undangan Terdaftar:
               </p>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                 {availableClients.map((c) => (
@@ -46,7 +70,9 @@ const NotFound = ({ requestedSlug }) => {
                       onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
                     >
                       <span className="text-gold font-display">{c.names}</span>
-                      <span className="font-sans text-xs" style={{ opacity: 0.7 }}>Lihat Undangan &rarr;</span>
+                      <code style={{ fontFamily: 'monospace', textTransform: 'none', fontSize: '0.75rem', opacity: 0.7 }}>
+                        /{c.slug.toLowerCase()}
+                      </code>
                     </a>
                   </li>
                 ))}

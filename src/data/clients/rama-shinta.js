@@ -6,6 +6,7 @@
 
 export const ramaShintaConfig = {
   slug: "rama-shinta",
+  adminKey: "ram-shi-secret-token-2027-w7m4",
 
   meta: {
     title: "The Wedding of Rama & Shinta",
@@ -39,14 +40,14 @@ export const ramaShintaConfig = {
   cover: {
     subtitle: "The Wedding Of",
     title: "Rama & Shinta",
-    date: "Sabtu, 18 September 2027",
+    date: "2027-09-18",
     buttonText: "Buka Undangan",
   },
 
   hero: {
     eyebrow: "Walimatul 'Ursy",
     title: "Rama & Shinta",
-    date: "18 . 09 . 2027",
+    date: "2027-09-18",
   },
 
   countdown: {
@@ -86,7 +87,7 @@ export const ramaShintaConfig = {
   events: [
     {
       title: "Akad & Resepsi Pernikahan",
-      date: "Sabtu, 18 September 2027",
+      date: "2027-09-18",
       time: "09.00 - 14.00",
       timezone: "WIB",
       locationName: "Gedung Pewayangan Kautaman",
@@ -99,16 +100,19 @@ export const ramaShintaConfig = {
   loveStory: [
     {
       year: "2020",
+      date: "2020-03-10",
       title: "Pertemuan Pertama",
       story: "Pertama kali berkenalan dalam kegiatan seni tradisi di universitas.",
     },
     {
       year: "2024",
+      date: "2024-07-21",
       title: "Menjalin Komitmen",
       story: "Memutuskan untuk melangkah ke jenjang yang lebih serius dengan restu kedua keluarga.",
     },
     {
       year: "2027",
+      date: "2027-09-18",
       title: "Menuju Pelaminan",
       story: "Mengikat janji suci pernikahan untuk melangkah bersama mengarungi bahtera rumah tangga.",
     },

@@ -1,39 +1,24 @@
 /**
  * REGISTRY KLIEN & VALIDATOR KONFIGURASI
  * -------------------------------------------------------------
- * Menyimpan daftar klien yang aktif, routing slug, serta validasi
- * integritas data sebelum undangan dirender.
+ * Menyimpan daftar klien aktif, routing slug, validasi integritas data,
+ * serta lazy-load chunk per klien untuk isolasi privasi & keamanan data di produksi.
  */
-
-import { arjunaSrikandiConfig } from './clients/arjuna-srikandi.js';
-import { ramaShintaConfig } from './clients/rama-shinta.js';
-
-/**
- * Registry klien yang secara dinamis memuat semua konfigurasi di ./clients/*.js
- * sekaligus mendukung registrasi manual.
- */
-export const clientRegistry = {
-  'arjuna-srikandi': arjunaSrikandiConfig,
-  'rama-shinta': ramaShintaConfig,
-};
-
-// Auto-discovery konfigurasi klien menggunakan Vite import.meta.glob
-try {
-  const clientModules = import.meta.glob('./clients/*.js', { eager: true });
-  for (const path in clientModules) {
-    if (path.includes('client-template')) continue;
-    const mod = clientModules[path];
-    const config = mod.default || Object.values(mod).find((val) => val && typeof val === 'object' && val.slug);
-    if (config && config.slug) {
-      clientRegistry[config.slug] = config;
-    }
-  }
-} catch {
-  // Fallback untuk lingkungan non-Vite (misal unit test node murni)
-}
 
 // Klien bawaan bila slug tidak ditentukan di URL
 export const DEFAULT_CLIENT_SLUG = 'arjuna-srikandi';
+
+// Lazy chunk loaders via Vite import.meta.glob (tanpa eager)
+// Vite / Rollup memecah tiap file ./clients/*.js menjadi file .js terpisah di dist/
+let clientLoaders = {};
+try {
+  clientLoaders = import.meta.glob('./clients/*.js');
+} catch {
+  // Lingkungan non-Vite
+}
+
+// In-memory cache agar chunk yang sudah di-load tidak di-fetch ulang
+const clientConfigCache = {};
 
 /**
  * Validasi konfigurasi klien saat runtime.
@@ -50,6 +35,7 @@ export function validateClientConfig(config) {
 
   // Pengecekan Field Utama
   if (!config.slug) warnings.push('Field `slug` belum didefinisikan.');
+  if (!config.adminKey) warnings.push('Field `adminKey` belum diset (generator link tamu tidak akan bisa diakses).');
   if (!config.meta?.title) warnings.push('Field `meta.title` kosong.');
   if (!config.couple?.groom?.name) warnings.push('Field `couple.groom.name` kosong.');
   if (!config.couple?.bride?.name) warnings.push('Field `couple.bride.name` kosong.');
@@ -58,7 +44,7 @@ export function validateClientConfig(config) {
     warnings.push('Array `events` minimal harus memiliki 1 acara.');
   }
 
-  if (!config.music?.src) {
+  if (!config.music?.src && !config.music?.file && !config.audio) {
     warnings.push('Field `music.src` belum ditentukan.');
   }
 
@@ -80,31 +66,73 @@ export function validateClientConfig(config) {
 }
 
 /**
- * Mendapatkan konfigurasi klien berdasarkan slug
+ * Memuat konfigurasi klien secara lazy-load (asinkron).
+ * Memastikan data klien lain TIDAK ikut ter-bundle ke chunk halaman klien aktif.
+ * @param {string} slug 
+ * @returns {Promise<object|null>}
+ */
+export async function loadClientConfigAsync(slug) {
+  if (!slug) return null;
+  const normalized = String(slug).toLowerCase().trim();
+
+  if (clientConfigCache[normalized]) {
+    return clientConfigCache[normalized];
+  }
+
+  // Cari di dynamic chunk loaders Vite
+  const loaderKey = `./clients/${normalized}.js`;
+  if (clientLoaders && clientLoaders[loaderKey]) {
+    try {
+      const mod = await clientLoaders[loaderKey]();
+      const config = mod.default || Object.values(mod).find((val) => val && typeof val === 'object' && val.slug);
+      if (config) {
+        validateClientConfig(config);
+        clientConfigCache[normalized] = config;
+        return config;
+      }
+    } catch (err) {
+      console.warn(`[ClientRegistry] Gagal memuat chunk untuk slug '${slug}':`, err);
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Mendapatkan konfigurasi klien secara sinkron bila sudah tersedia di cache
  * @param {string} slug 
  * @returns {object|null}
  */
 export function getClientConfig(slug) {
   if (!slug) return null;
-  const normalizedSlug = String(slug).toLowerCase().trim();
-  const config = clientRegistry[normalizedSlug] || null;
-
-  if (config) {
-    validateClientConfig(config);
-  }
-
-  return config;
+  const normalized = String(slug).toLowerCase().trim();
+  return clientConfigCache[normalized] || null;
 }
 
 /**
- * Mendapatkan daftar seluruh slug klien yang tersedia
- * @returns {Array<{slug: string, title: string, names: string}>}
+ * Mendapatkan daftar slug klien yang tersedia.
+ * Di mode produksi, mengembalikan array kosong demi privasi data klien.
+ * @returns {Array<{slug: string, title: string, names: string, date: string, adminKey?: string}>}
  */
 export function getAvailableClients() {
-  return Object.values(clientRegistry).map((c) => ({
-    slug: c.slug,
-    title: c.meta?.title || c.slug,
-    names: `${c.couple?.groom?.shortName || 'Pria'} & ${c.couple?.bride?.shortName || 'Wanita'}`,
-    date: c.hero?.date || c.events?.[0]?.date || ''
-  }));
+  const isDev = Boolean(import.meta.env && import.meta.env.DEV);
+  
+  // Sembunyikan daftar klien di mode produksi (Requirement 1)
+  if (!isDev) {
+    return [];
+  }
+
+  return Object.keys(clientLoaders)
+    .filter((k) => !k.includes('client-template'))
+    .map((k) => {
+      const slug = k.replace(/^\.\/clients\//, '').replace(/\.js$/, '');
+      const cached = clientConfigCache[slug];
+      return {
+        slug,
+        title: cached?.meta?.title || slug,
+        names: cached?.couple ? `${cached.couple.groom?.shortName || ''} & ${cached.couple.bride?.shortName || ''}` : slug,
+        date: cached?.hero?.date || cached?.events?.[0]?.date || '',
+        adminKey: cached?.adminKey || ''
+      };
+    });
 }

@@ -6,6 +6,8 @@
 
 export const arjunaSrikandiConfig = {
   slug: "arjuna-srikandi",
+  // Token otentikasi admin untuk akses generator link tamu (minimal 16 karakter acak)
+  adminKey: "arj-sri-secret-token-2027-x9k2",
 
   // Metadata Website (SEO, Open Graph, Browser Tab)
   meta: {
@@ -48,7 +50,7 @@ export const arjunaSrikandiConfig = {
   // Hero Section
   hero: {
     eyebrow: "Walimatul 'Urs",
-    date: "Minggu, 12 Desember 2027",
+    date: "2027-12-12",
     weddingDateISO: "2027-12-12T09:00:00",
   },
 
@@ -84,7 +86,7 @@ export const arjunaSrikandiConfig = {
   events: [
     {
       title: "Akad Nikah",
-      date: "Minggu, 12 Desember 2027",
+      date: "2027-12-12",
       time: "09.00 - 11.00",
       timezone: "WIB",
       venue: "Pendopo Mempelai Wanita",
@@ -94,7 +96,7 @@ export const arjunaSrikandiConfig = {
     },
     {
       title: "Resepsi",
-      date: "Minggu, 12 Desember 2027",
+      date: "2027-12-12",
       time: "12.00 - 15.00",
       timezone: "WIB",
       venue: "Joglo Convention Hall",
@@ -108,7 +110,7 @@ export const arjunaSrikandiConfig = {
   loveStory: [
     {
       year: "2021",
-      date: "14 Februari 2021",
+      date: "2021-02-14",
       title: "Pertemuan Pertama",
       description: "Berawal dari sebuah acara kebudayaan tradisional di Yogyakarta, takdir mempertemukan kami dalam satu tatap dan percakapan sederhana.",
       icon: "sparkles",
@@ -116,7 +118,7 @@ export const arjunaSrikandiConfig = {
     },
     {
       year: "2023",
-      date: "18 Juni 2023",
+      date: "2023-06-18",
       title: "Mengikat Komitmen",
       description: "Setelah dua tahun saling mengenal dan menguatkan rasa, kami memantapkan hati untuk saling berjalan berdampingan menuju masa depan.",
       icon: "heart",
@@ -124,7 +126,7 @@ export const arjunaSrikandiConfig = {
     },
     {
       year: "2026",
-      date: "25 Oktober 2026",
+      date: "2026-10-25",
       title: "Lamaran Sakral",
       description: "Di hadapan kedua keluarga besar tercinta, doa dan niat tulus berpadu dalam prosesi lamaran yang penuh kehangatan dan restu.",
       icon: "gem",
@@ -132,7 +134,7 @@ export const arjunaSrikandiConfig = {
     },
     {
       year: "2027",
-      date: "12 Desember 2027",
+      date: "2027-12-12",
       title: "Menuju Hari Bahagia",
       description: "Langkah suci kami berlanjut menuju gerbang pernikahan yang abadi, memohon doa dan ridho Ilahi mengarungi mahligai rumah tangga.",
       icon: "wedding",
