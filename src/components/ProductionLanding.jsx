@@ -1,15 +1,24 @@
 import React, { useEffect } from 'react';
 import { Sparkles, MessageCircle, ShieldCheck, HeartHandshake, Music } from 'lucide-react';
-import { setRobotsNoIndex } from '../utils/seo';
 
 const ProductionLanding = () => {
-  useEffect(() => {
-    // Pastikan halaman landing produksi tidak diindeks mesin pencari
-    setRobotsNoIndex();
-    document.title = 'Undangan Pernikahan Tradisional Digital';
-  }, []);
+  const brandName = import.meta.env?.VITE_BRAND_NAME || 'Kalyana Undangan Adat';
+  const whatsappNumber = import.meta.env?.VITE_WHATSAPP_NUMBER || '6281234567890';
+  const brandDesc = 'Platform undangan pernikahan digital bernuansa adat tradisional Nusantara yang sakral, elegan, dan berkelas bagi hari bahagia Anda.';
 
-  const whatsappUrl = 'https://wa.me/6281234567890?text=Halo%2C%20saya%20ingin%20berkonsultasi%20mengenai%20pembuatan%20undangan%20pernikahan%20digital%20adat.';
+  useEffect(() => {
+    document.title = `${brandName} - Layanan Undangan Pernikahan Adat Digital`;
+
+    let metaDesc = document.querySelector('meta[name="description"]');
+    if (!metaDesc) {
+      metaDesc = document.createElement('meta');
+      metaDesc.setAttribute('name', 'description');
+      document.head.appendChild(metaDesc);
+    }
+    metaDesc.setAttribute('content', brandDesc);
+  }, [brandName, brandDesc]);
+
+  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent('Halo, saya ingin berkonsultasi mengenai pembuatan undangan pernikahan digital adat.')}`;
 
   return (
     <div style={{
@@ -22,24 +31,36 @@ const ProductionLanding = () => {
       position: 'relative',
       overflow: 'hidden'
     }}>
-      {/* Background Ornaments */}
-      <img 
-        src="/assets/sunda_bg.jpg" 
-        alt="Ornamen Latar" 
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          opacity: 0.1,
-          pointerEvents: 'none'
-        }} 
-      />
+      {/* Background Ornaments (Optimized WebP with JPG fallback) */}
+      <picture style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        pointerEvents: 'none'
+      }}>
+        <source srcSet="/assets/sunda_bg.webp" type="image/webp" />
+        <img 
+          src="/assets/sunda_bg.jpg" 
+          alt="" 
+          role="presentation"
+          aria-hidden="true"
+          loading="lazy"
+          decoding="async"
+          width="1024"
+          height="1024"
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            opacity: 0.1
+          }} 
+        />
+      </picture>
 
-      {/* Main Content Area */}
-      <div style={{
+      {/* Main Content Area (Semantic main landmark for 100 Accessibility) */}
+      <main style={{
         maxWidth: '860px',
         margin: '0 auto',
         padding: '4rem 1.5rem',
@@ -177,7 +198,7 @@ const ProductionLanding = () => {
         <p className="font-sans" style={{ fontSize: '0.8rem', opacity: 0.65, marginTop: '1rem' }}>
           Hubungi tim kami untuk pembuatan undangan pernikahan adat Anda
         </p>
-      </div>
+      </main>
 
       {/* Footer */}
       <footer style={{

@@ -28,16 +28,23 @@ async function prerender() {
       .replace(/<meta\s+name=["']robots["'][^>]*>/gi, '');
   }
 
-  // 1. Modifikasi dist/index.html (Halaman root produksi netral) agar diberi noindex
+  // 1. Modifikasi dist/index.html (Halaman root produksi netral dengan meta SEO & Open Graph)
   let rootHtml = cleanHead(rawTemplate);
   const brandName = process.env.VITE_BRAND_NAME || 'Kalyana Undangan Adat';
+  const brandDesc = 'Platform pembuatan undangan pernikahan adat tradisional digital Nusantara yang sakral, elegan, dan berkelas.';
   const rootMetaTags = `
-    <title>${escapeHtml(brandName)}</title>
-    <meta name="robots" content="noindex, nofollow" />
+    <!-- Brand Landing Page SEO & Open Graph -->
+    <title>${escapeHtml(brandName)} - Undangan Pernikahan Adat Digital</title>
+    <meta name="description" content="${escapeHtml(brandDesc)}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="${escapeHtml(brandName)}" />
+    <meta property="og:title" content="${escapeHtml(brandName)} - Undangan Pernikahan Adat Digital" />
+    <meta property="og:description" content="${escapeHtml(brandDesc)}" />
+    <meta property="og:image" content="/assets/sunda_bg.jpg" />
   `;
   rootHtml = rootHtml.replace('</head>', `${rootMetaTags}\n  </head>`);
   fs.writeFileSync(indexHtmlPath, rootHtml, 'utf8');
-  console.log('\x1b[32m✔ dist/index.html disuntikkan meta noindex untuk produksi.\x1b[0m');
+  console.log('\x1b[32m✔ dist/index.html disuntikkan meta SEO & Open Graph lengkap.\x1b[0m');
 
   // 2. Scan semua konfigurasi klien di src/data/clients/*.js
   const clientFiles = fs.readdirSync(clientsDir).filter(
